@@ -33,6 +33,30 @@
       </select>
     </div>
 
+    <div crm-ui-field="{name: 'inlayForm.layout', title: ts('Layout'), help: hs('layout')}" ng-if="fp">
+      <textarea
+        rows="3"
+        cols="30"
+        crm-ui-id="inlayForm.layout"
+        name="layout"
+        ng-model="inlay.config.layout"
+        class="crm-form-text"
+        placeholder="{{ts('Our lovely form processor form')}}"
+        ng-change="checkLayout()"
+        ></textarea>
+
+      <p>Fields:
+        <span ng-repeat="f in fp.inputs"
+          ng-style="{color: !!layoutParsed.fieldsUsed[f.name] ? '#080' : '#800'}"
+          >{{f.name}} <span ng-if="f.is_required == 1">(required)</span> &nbsp; </span>
+      </p>
+
+      <div class="layout-demo" ng-bind-html="layoutParsed.html"></div>
+      <ul ng-if="layoutParsed.errors.length" class="error">
+        <li ng-repeat="e in layoutParsed.errors">{{e}}</li>
+      </ul>
+    </div>
+
     <div>
       <button ng-click="save()">{{ts('Save')}}</button>
     </div>

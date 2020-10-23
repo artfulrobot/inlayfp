@@ -1,4 +1,3 @@
-console.log("hello");
 (function(angular, $, _) {
 
   angular.module('inlayfp').config(function($routeProvider) {
@@ -18,7 +17,7 @@ console.log("hello");
             }
             return crmApi4(params)
             .then(r => {
-              return crmApi('FormProcessorInstance', 'get', {})
+              return crmApi('FormProcessorInstance', 'get', {sequential: 1})
                 .then(r2 => {
                   r.formProcessors = r2.values;
                   return r;
@@ -54,6 +53,7 @@ console.log("hello");
     }
     const inlay = $scope.inlay;
     $scope.formProcessors = various.formProcessors;
+    console.log(various.formProcessors);
 
     $scope.save = function() {
       return crmStatus(
@@ -66,6 +66,74 @@ console.log("hello");
         window.location = CRM.url('civicrm/a?#inlays');
       });
     };
+
+    $scope.fp = null;
+    $scope.fpInputs = null;
+    $scope.setFP = function() {
+      $scope.fp = various.formProcessors.find(fp => fp.name === inlay.config.formProcessor);
+      $scope.fpInputs = {};
+      if ($scope.fp) {
+        // name-indexed lookup of inputs.
+        $scope.fp.inputs.forEach(i => { $scope.fpInputs[i.name] = i; });
+      }
+    };
+    $scope.setFP();
+
+    /**
+     * Parse a layout like
+     * .group-class
+     *  field1
+     *  field2
+     * field3
+     *
+     */
+    $scope.checkLayout = function checkLayout() {
+      console.log("checkLayout running", inlay.config.layout);
+      var html = '<div>', stack = ['</div>'], indent= '', errors= [], fieldsUsed = {};
+
+      var items = inlay.config.layout.split(/[\r\n]+/);
+      items.forEach(i => {
+        var m = i.match(/^( *)(\.?[a-zA-Z_-][a-zA-Z0-9_-]*)$/);
+        if (!m) {
+          errors.push(`The line '${i}' is invalid.`);
+          return;
+        }
+
+        // @todo get field details.
+        if (m[1].length < indent.length) {
+          // decreased - close a group.
+          html += stack.splice(0, indent.length - m[1].length).join('');
+        }
+        else if (m[1].length > indent.length) {
+          // increased indentation without starting a group.
+          errors.push(`The line '${i}' is invalid - too much indentation. Expected ${indent.length} got ${m[1].length}`);
+          return;
+        }
+
+        if (m[2].substr(0, 1) === '.') {
+          // Start a new group.
+          indent += ' ';
+          html += `<div class="group group--${m[2].substr(1)}">${m[2]}<div class="items">`;
+          stack.unshift('</div></div>');
+        }
+        else {
+          // Is a field.
+          if (m[2] in $scope.fpInputs) {
+            html += `<div class="field">Field: ${m[2]}</div>`;
+            fieldsUsed[m[2]] = 1;
+          }
+          else {
+            errors.push(`Field ${m[2]} is not defined as an input in the selected Form Processor.`);
+          }
+        }
+      });
+      html += stack.join('');
+
+      $scope.layoutParsed = {
+        html, errors, fieldsUsed
+      };
+    }
+    $scope.checkLayout();
 
   });
 

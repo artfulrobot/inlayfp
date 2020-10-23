@@ -13,6 +13,7 @@ class FormProcessor extends InlayType {
 
   public static $defaultConfig = [
     'formProcessor'   => NULL,
+    'layout' => '',
     'submitButtonText' => 'Submit',
   ];
 
@@ -49,6 +50,70 @@ class FormProcessor extends InlayType {
       'init'             => 'inlayFPInit',
       'submitButtonText' => $this->config['submitButtonText'],
     ];
+
+    $fp = civicrm_api3('FormProcessorInstance', 'get', ['sequential' => 1, 'name' => $this->config['formProcessor']])['values'][0] ?? NULL;
+    if (!$fp) {
+      // aaaagh!
+      throw new RuntimeException("Cannot load form processor '{$this->config['formProcessor']}'");
+    }
+
+    // Parse the layout.
+    $inputs = [];
+    foreach ($fp['inputs'] as $_) {
+      $inputs[$_['name']] = $_;
+    }
+
+    $init['layout'] = [];
+    // First there's on item on the stack which is the top level thing.
+    $stack = [&$init['layout']];
+    $ptr = 0;
+    $depth = 0;
+    foreach (preg_split('/[\r\n]+/', $this->config['layout']) as $line) {
+      if (!trim($line)) {
+        continue;
+      }
+      $m = [];
+      if (!preg_match('/^(\s*)(\.?)([a-zA-Z_-][a-zA-Z0-9_-]*)$/', $line, $m)) {
+        // Broken! @todo flag this somehow. Possibly abort the rebuild.
+        continue;
+      }
+
+      $lineDepth = strlen($m[1]);
+      $isGroup = $m[2] === '.';
+      $name = $m[3];
+
+      while ($lineDepth < $depth) {
+        array_pop($stack);
+        $ptr--;
+        $depth--;
+      }
+
+      if ($isGroup) {
+        // new group.
+        $item = ['tag' => 'FieldGroup', 'class' => $name, 'content' => []];
+        // Add this item to the current collection.
+        $stack[$ptr][] = &$item;
+        // Add an item to the stck itself, do our new collection is the item's fields.
+        $stack[] = &$item['content'];
+        $ptr++;
+        $depth++;
+      }
+      else {
+        // field.
+        if (!isset($inputs[$name])) {
+          continue;
+        }
+        $item = ['tag' => 'IfpField', 'class' => $name, 'content' => $name];
+        $stack[$ptr][] = $item;
+      }
+      unset($item);
+    }
+
+    // Export the field definitions, keyed by name.
+    $init['fieldDefs'] = [];
+    foreach ($fp['inputs'] as $_) {
+      $init['fieldDefs'][$_['name']] = $_;
+    }
 
     return $init;
   }
