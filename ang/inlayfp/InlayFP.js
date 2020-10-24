@@ -103,6 +103,7 @@
         if (m[1].length < indent.length) {
           // decreased - close a group.
           html += stack.splice(0, indent.length - m[1].length).join('');
+          indent = m[1];
         }
         else if (m[1].length > indent.length) {
           // increased indentation without starting a group.

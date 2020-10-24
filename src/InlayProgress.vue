@@ -6,12 +6,22 @@
 <script>
 export default {
   data() {
-    return {}
+    return {
+      doneBefore:0,
+      percentDoneAtEndOfJob: 100,
+      expectedTime: null,
+      start: null,
+      running: false,
+      percent: null,
+    }
   },
   props: {
     color: {
       default: '#46a'
     }
+  },
+  mounted() {
+    console.log('progress colour' , this.color);
   },
   methods: {
     startTimer(expectedTime, percentDoneAtEndOfJob, reset) {
@@ -22,11 +32,11 @@ export default {
         this.expectedTime= expectedTime;
         this.percent= 0;
         this.start= null;
-        this.running= false;
+        this.running = false;
       }
       else {
         // Adding a job.
-        this.doneBefore = progress.percent;
+        this.doneBefore = this.percent;
         this.start = null;
         this.expectedTime = expectedTime;
         this.percentDoneAtEndOfJob = percentDoneAtEndOfJob;
@@ -49,8 +59,11 @@ export default {
       const easeout = 1 - (1-linear) * (1-linear) * (1-linear);
       this.percent = this.doneBefore + easeout * (this.percentDoneAtEndOfJob - this.doneBefore);
 
-      if (this.running && (linear < 1)) {
-        window.requestAnimationFrame(this.animateTimer.bind(this));
+      if (this.running) {
+        if (linear < 1) {
+          // We still have stuff to animate.
+          window.requestAnimationFrame(this.animateTimer.bind(this));
+        }
       }
       else {
         this.running = false;

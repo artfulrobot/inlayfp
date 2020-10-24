@@ -12,9 +12,10 @@ class FormProcessor extends InlayType {
   public static $typeName = 'Form Processor Form';
 
   public static $defaultConfig = [
-    'formProcessor'   => NULL,
-    'layout' => '',
+    'formProcessor'    => NULL,
+    'layout'           => '',
     'submitButtonText' => 'Submit',
+    'webThanksHTML'    => '<p>Thank you</p>',
   ];
 
   /**
@@ -156,26 +157,37 @@ class FormProcessor extends InlayType {
   public function cleanupInput($data) {
     $errors = [];
     $valid = [];
-    // Check we have what we need.
-    foreach (['first_name', 'last_name', 'email'] as $field) {
-      $val = trim($data[$field] ?? '');
-      if (empty($val)) {
-        $errors[] = str_replace('_', ' ', $field) . " required.";
-      }
-      else {
-        if ($field === 'email' && !filter_var($val, FILTER_VALIDATE_EMAIL)) {
-          $errors[] = "invalid email address";
-        }
-        else {
-          $valid[$field] = $val;
-        }
-      }
-    }
-    if ($errors) {
-      throw new \Civi\Inlay\ApiException(400, implode(', ', $errors));
+
+    // Here I would like to call the form processor, but only as far as
+    // validating the inputs, not actually executing it.
+    // However, the validation is all coded together with the
+    // invokeFormProcessor() execute code, so that can't happen right now.
+    //
+    // Instead we'll just ensure that the only data we pass on is that which
+    // correlates to the inputs of the form processor.
+    $fp = civicrm_api3('FormProcessorInstance', 'get', ['sequential' => 1, 'name' => $this->config['formProcessor']])['values'][0] ?? NULL;
+    if (!$fp) {
+      Civi::log()->error("Inlay error FP1: failed to load form processor for the Inlay called " . $this->getName());
+      throw new \Civi\Inlay\ApiException(500, "Sorry, this form has not been configured correctly. Error: FP1");
     }
 
-    // Data is valid.
+    foreach ($fp['inputs'] as $_) {
+      $inputName = $_['name'];
+      if (isset($data[$inputName])) {
+        $valid[$inputName] = $data[$inputName];
+      }
+      elseif ($_['is_required'] == 1) {
+        // A required input is not present in the request. This is not going to work.
+        // It's probably a configuration error - e.g. didn't add the field to the form.
+        Civi::log()->error("Inlay error FP2: Form Processor in put $inputName is required but has not been sent with a request. Has the input been added to the form correctly? Inlay Name: " . $this->getName());
+        throw new \Civi\Inlay\ApiException(500, "Sorry, this form has not been configured correctly. Error: FP2");
+      }
+    }
+
+    // Ok, we don't know if the data is valid, but we do know that $valid now
+    // only contains the inputs, and that none of the required inputs are
+    // missing.
+
     if (!empty($data['token'])) {
       // There is a token, check that now.
       try {
@@ -191,7 +203,6 @@ class FormProcessor extends InlayType {
           "Mysterious problem, sorry! Code " . substr($e->getMessage(), 0, 3));
       }
     }
-
 
     return $valid;
   }

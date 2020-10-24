@@ -7,6 +7,7 @@
       :type="inputType"
       :ref="def.name"
       :required="def.is_required == 1"
+      :disabled="submissionRunning"
       v-model="$root.values[def.name]"
       />
     <textarea
@@ -16,6 +17,7 @@
       v-model="$root.values[def.name]"
       :required="def.is_required == 1"
       :name="def.name"
+      :disabled="submissionRunning"
       :ref="def.name"
       />
   </div>
@@ -29,6 +31,9 @@ export default {
   computed: {
     def() {
       return this.$root.inlay.initData.fieldDefs[this.content];
+    },
+    submissionRunning() {
+      return this.$root.submissionRunning;
     },
     inputType() {
       if (this.def.type.name === 'String') {

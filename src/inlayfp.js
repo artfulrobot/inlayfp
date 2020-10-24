@@ -19,7 +19,7 @@ import InlayFormProcessor from './InlayFormProcessor.vue';
             values[fieldName] = '';
             inlay.initData.fieldDefs[fieldName].include = false;
           });
-          var d = {inlay, values};
+          var d = {inlay, values, submissionRunning: false};
           return d;
         },
         render: h => h(InlayFormProcessor, {props: {inlay}})

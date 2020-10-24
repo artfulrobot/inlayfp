@@ -155,12 +155,17 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ['content'],
   computed: {
     def: function def() {
       return this.$root.inlay.initData.fieldDefs[this.content];
+    },
+    submissionRunning: function submissionRunning() {
+      return this.$root.submissionRunning;
     },
     inputType: function inputType() {
       if (this.def.type.name === 'String') {
@@ -225,6 +230,12 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -234,9 +245,15 @@ __webpack_require__.r(__webpack_exports__);
     InlayProgress: _InlayProgress_vue__WEBPACK_IMPORTED_MODULE_1__["default"]
   },
   data: function data() {
-    return {};
+    return {
+      stage: 'form'
+    };
   },
-  computed: {},
+  computed: {
+    submissionRunning: function submissionRunning() {
+      return this.$root.submissionRunning;
+    }
+  },
   methods: {
     wantsToSubmit: function wantsToSubmit() {// validate all fields.
     },
@@ -244,6 +261,7 @@ __webpack_require__.r(__webpack_exports__);
       var _this = this;
 
       // Form is valid according to browser.
+      this.$root.submissionRunning = true;
       var d = {};
       Object.keys(this.$root.values).forEach(function (fieldName) {
         if (_this.$root.inlay.initData.fieldDefs[fieldName].include) {
@@ -251,7 +269,48 @@ __webpack_require__.r(__webpack_exports__);
         }
       });
       console.log("would submit: ", d);
-      this.$refs.progress.startTimer(5, 20, 1);
+      var progress = this.$refs.progress;
+      progress.startTimer(5, 20, 1);
+      this.inlay.request({
+        method: 'post',
+        body: d
+      }).then(function (r) {
+        if (r.token) {
+          d.token = r.token;
+          progress.startTimer(6, 80); // Force 5s wait for the token to become valid
+
+          return new Promise(function (resolve, reject) {
+            window.setTimeout(resolve, 5000);
+          });
+        } else {
+          console.warn("unexpected resonse", r);
+          throw r.error || 'Unknown error';
+        }
+      }).then(function () {
+        progress.startTimer(2, 100);
+        return _this.inlay.request({
+          method: 'post',
+          body: d
+        });
+      }).then(function (r) {
+        if (r.error) {
+          throw r.error;
+        }
+
+        _this.stage = 'thanks';
+        progress.cancelTimer();
+      })["catch"](function (e) {
+        console.error(e);
+
+        if (typeof e === 'String') {
+          alert(e);
+        } else {
+          alert("Unexpected error");
+        }
+
+        _this.$root.submissionRunning = false;
+        progress.cancelTimer();
+      });
     }
   }
 });
@@ -274,12 +333,22 @@ __webpack_require__.r(__webpack_exports__);
 //
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
-    return {};
+    return {
+      doneBefore: 0,
+      percentDoneAtEndOfJob: 100,
+      expectedTime: null,
+      start: null,
+      running: false,
+      percent: null
+    };
   },
   props: {
     color: {
       "default": '#46a'
     }
+  },
+  mounted: function mounted() {
+    console.log('progress colour', this.color);
   },
   methods: {
     startTimer: function startTimer(expectedTime, percentDoneAtEndOfJob, reset) {
@@ -294,7 +363,7 @@ __webpack_require__.r(__webpack_exports__);
         this.running = false;
       } else {
         // Adding a job.
-        this.doneBefore = progress.percent;
+        this.doneBefore = this.percent;
         this.start = null;
         this.expectedTime = expectedTime;
         this.percentDoneAtEndOfJob = percentDoneAtEndOfJob;
@@ -319,8 +388,11 @@ __webpack_require__.r(__webpack_exports__);
       var easeout = 1 - (1 - linear) * (1 - linear) * (1 - linear);
       this.percent = this.doneBefore + easeout * (this.percentDoneAtEndOfJob - this.doneBefore);
 
-      if (this.running && linear < 1) {
-        window.requestAnimationFrame(this.animateTimer.bind(this));
+      if (this.running) {
+        if (linear < 1) {
+          // We still have stuff to animate.
+          window.requestAnimationFrame(this.animateTimer.bind(this));
+        }
       } else {
         this.running = false;
       }
@@ -1570,6 +1642,7 @@ var render = function() {
           attrs: {
             name: _vm.def.name,
             required: _vm.def.is_required == 1,
+            disabled: _vm.submissionRunning,
             type: "checkbox"
           },
           domProps: {
@@ -1616,6 +1689,7 @@ var render = function() {
           attrs: {
             name: _vm.def.name,
             required: _vm.def.is_required == 1,
+            disabled: _vm.submissionRunning,
             type: "radio"
           },
           domProps: { checked: _vm._q(_vm.$root.values[_vm.def.name], null) },
@@ -1639,6 +1713,7 @@ var render = function() {
           attrs: {
             name: _vm.def.name,
             required: _vm.def.is_required == 1,
+            disabled: _vm.submissionRunning,
             type: _vm.inputType
           },
           domProps: { value: _vm.$root.values[_vm.def.name] },
@@ -1668,7 +1743,8 @@ var render = function() {
             rows: "4",
             cols: "40",
             required: _vm.def.is_required == 1,
-            name: _vm.def.name
+            name: _vm.def.name,
+            disabled: _vm.submissionRunning
           },
           domProps: { value: _vm.$root.values[_vm.def.name] },
           on: {
@@ -1706,37 +1782,54 @@ var render = function() {
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
   return _c("div", { staticStyle: { overflow: "hidden" } }, [
-    _c(
-      "form",
-      {
-        attrs: { action: "#" },
-        on: {
-          submit: function($event) {
-            $event.preventDefault()
-            return _vm.submitForm($event)
-          }
-        }
-      },
-      [
-        _c("field-group", {
-          attrs: { content: _vm.inlay.initData.layout, "group-class": "" }
-        }),
-        _vm._v(" "),
-        _c(
-          "div",
-          { staticClass: "ifg-submit" },
+    _vm.stage === "form"
+      ? _c(
+          "form",
+          {
+            attrs: { action: "#" },
+            on: {
+              submit: function($event) {
+                $event.preventDefault()
+                return _vm.submitForm($event)
+              }
+            }
+          },
           [
-            _c("button", { on: { click: _vm.wantsToSubmit } }, [
-              _vm._v(_vm._s(_vm.inlay.initData.submitButtonText))
-            ]),
+            _c("field-group", {
+              attrs: { content: _vm.inlay.initData.layout, "group-class": "" }
+            }),
             _vm._v(" "),
-            _c("inlay-progress", { ref: "progress" })
+            _c(
+              "div",
+              { staticClass: "ifg-submit" },
+              [
+                _c(
+                  "button",
+                  {
+                    attrs: { disabled: _vm.submissionRunning },
+                    on: { click: _vm.wantsToSubmit }
+                  },
+                  [
+                    _vm._v(
+                      _vm._s(
+                        _vm.submissionRunning
+                          ? "Please wait.."
+                          : _vm.inlay.initData.submitButtonText
+                      )
+                    )
+                  ]
+                ),
+                _vm._v(" "),
+                _c("inlay-progress", { ref: "progress" })
+              ],
+              1
+            )
           ],
           1
         )
-      ],
-      1
-    )
+      : _vm._e(),
+    _vm._v(" "),
+    _vm.stage === "thanks" ? _c("div", [_vm._v("\n    Thanks.\n  ")]) : _vm._e()
   ])
 }
 var staticRenderFns = []
@@ -14246,7 +14339,8 @@ __webpack_require__.r(__webpack_exports__);
           });
           var d = {
             inlay: inlay,
-            values: values
+            values: values,
+            submissionRunning: false
           };
           return d;
         },
