@@ -1,6 +1,10 @@
-# inlayfp
+# An [Inlay](https://lab.civicrm.org/extensions/inlay) for Form Processor
 
-![Screenshot](/images/screenshot.png)
+This is at proof of concept stage.
+
+![Screenshot of admin UI](/images/screenshot-1.png)
+
+![Screenshot of external website UI](/images/screenshot-2.png)
 
 (*FIXME: In one or two paragraphs, describe what the extension does and why one would download it. *)
 
