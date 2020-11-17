@@ -55,7 +55,7 @@ class FormProcessor extends InlayType {
     $fp = civicrm_api3('FormProcessorInstance', 'get', ['sequential' => 1, 'name' => $this->config['formProcessor']])['values'][0] ?? NULL;
     if (!$fp) {
       // aaaagh!
-      throw new RuntimeException("Cannot load form processor '{$this->config['formProcessor']}'");
+      throw new \RuntimeException("Cannot load form processor '{$this->config['formProcessor']}'");
     }
 
     // Parse the layout.
