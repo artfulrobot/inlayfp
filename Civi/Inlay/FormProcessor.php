@@ -64,7 +64,7 @@ class FormProcessor extends InlayType {
       $inputs[$_['name']] = $_;
     }
 
-    $init['layout'] = [];
+    $init['layout'] = $init['fieldDefs'] = [];
     // First there's on item on the stack which is the top level thing.
     $stack = [&$init['layout']];
     $ptr = 0;
@@ -106,17 +106,24 @@ class FormProcessor extends InlayType {
         }
         $item = ['tag' => 'IfpField', 'class' => $name, 'content' => $name];
         $stack[$ptr][] = $item;
+        // Export the field definitions, keyed by name.
+        $init['fieldDefs'][$name] = self::buildFieldDef($inputs[$name]);
       }
       unset($item);
     }
 
-    // Export the field definitions, keyed by name.
-    $init['fieldDefs'] = [];
-    foreach ($fp['inputs'] as $_) {
-      $init['fieldDefs'][$_['name']] = $_;
-    }
-
     return $init;
+  }
+
+  private function buildFieldDef(array $inputDef) {
+    $fieldDef = [];
+    // Let's only take data we're interested in, to minimize JS size and reduce info leakage.
+    unset($inputDef['type']['configuration_spec']);
+    $usedElements = ['name', 'is_required', 'type', 'validators', 'title'];
+    foreach ($usedElements as $element) {
+      $fieldDef[$element] = $inputDef[$element];
+    }
+    return $fieldDef;
   }
 
   /**
