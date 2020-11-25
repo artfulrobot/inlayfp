@@ -182,9 +182,13 @@ __webpack_require__.r(__webpack_exports__);
       if (this.def.type.name === 'Text') {
         return 'textarea';
       }
+      // Handle simple HTML5 validation types.
+      if (['Date','Time','Password'].includes(this.def.type.name)) {
+        return this.def.type.name.toLowerCase();
+      }
     },
     isInputType: function isInputType() {
-      return this.inputType === 'text' || this.inputType === 'email';
+      return ['text','email','date','time','password'].includes(this.inputType);
     },
     isTextareaType: function isTextareaType() {
       return this.inputType === 'textarea';

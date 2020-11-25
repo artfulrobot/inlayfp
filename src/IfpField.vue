@@ -46,9 +46,13 @@ export default {
       if (this.def.type.name === 'Text') {
         return 'textarea';
       }
+      // Handle simple HTML5 validation types.
+      if (['Date','Time','Password'].includes(this.def.type.name)) {
+        return this.def.type.name.toLowerCase();
+      }
     },
     isInputType() {
-      return (this.inputType === 'text' || this.inputType === 'email' );
+      return ['text','email','date','time','password'].includes(this.inputType);
     },
     isTextareaType() {
       return (this.inputType === 'textarea');
