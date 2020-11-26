@@ -83,7 +83,7 @@
      * Parse a layout like
      * .group-class
      *  field1
-     *  field2
+     *  field2~select
      * field3
      *
      */
@@ -93,7 +93,7 @@
 
       var items = inlay.config.layout.split(/[\r\n]+/);
       items.forEach(i => {
-        var m = i.match(/^( *)(\.?[a-zA-Z_-][a-zA-Z0-9_-]*)$/);
+        var m = i.match(/^( *)(\.?[a-zA-Z_-][a-zA-Z0-9_-]*)(?:~([a-zA-Z0-9_-]+))*$/);
         if (!m) {
           errors.push(`The line '${i}' is invalid.`);
           return;
@@ -120,7 +120,13 @@
         else {
           // Is a field.
           if (m[2] in $scope.fpInputs) {
-            html += `<div class="field">Field: ${m[2]}</div>`;
+            // Check for a modifier.
+            modifierText = '';
+            if (m[3]) {
+              modifierText = ' ' + fieldModifier(m[3]);
+            }
+            fieldHtml = `<div class="field">Field: ${m[2]}${modifierText}</div>`
+            html += fieldHtml;
             fieldsUsed[m[2]] = 1;
           }
           else {
@@ -133,6 +139,20 @@
       $scope.layoutParsed = {
         html, errors, fieldsUsed
       };
+    }
+    function fieldModifier(modifier) {
+      switch (modifier) {
+        case 'select':
+          text = "(Format as select list)";
+          break;
+        case 'radio':
+        case 'checkboxes':
+          text = "(Format as radio button/checkboxes)";
+          break;
+        default:
+          text = '';
+      }
+      return text;
     }
     $scope.checkLayout();
 
