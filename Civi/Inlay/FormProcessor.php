@@ -5,6 +5,7 @@ namespace Civi\Inlay;
 use Civi\Inlay\Type as InlayType;
 use Civi\Inlay\ApiRequest;
 use Civi;
+use Civi\Api4\Inlay;
 use CRM_Inlayfp_ExtensionUtil as E;
 
 class FormProcessor extends InlayType {
@@ -107,7 +108,7 @@ class FormProcessor extends InlayType {
         $item = ['tag' => 'IfpField', 'class' => $name, 'content' => $name];
         $stack[$ptr][] = $item;
         // Export the field definitions, keyed by name.
-        $init['fieldDefs'][$name] = self::buildFieldDef($inputs[$name], $modifier);
+        $init['fieldDefs'][$name] = $this->buildFieldDef($inputs[$name], $modifier);
       }
       unset($item);
     }
@@ -118,9 +119,8 @@ class FormProcessor extends InlayType {
   /**
    * Strip out unneeded data from the field definition; add in options for multiple-choice inputs.
    * Also apply any field modifiers.
-   * @return array
    */
-  private function buildFieldDef(array $inputDef, ?string $modifier) {
+  private function buildFieldDef(array $inputDef, ?string $modifier) : array {
     $fieldDef = [];
     // Let's only take data we're interested in, to minimize JS size and reduce info leakage.
     unset($inputDef['type']['configuration_spec']);
@@ -144,7 +144,31 @@ class FormProcessor extends InlayType {
         $fieldDef['type']['name'] = 'Select';
         break;
     }
+    // Add option values if applicable
+    if ($fieldDef['type']['default_configuration']['option_group_name']) {
+      $fieldDef['option_values'] = $this->buildOptions($fieldDef['type']['default_configuration']['option_group_name'], (int) $fieldDef['type']['default_configuration']['option_group_name']['use_label_as_value']);
+    }
     return $fieldDef;
+  }
+
+  /**
+   * Return a list of option values.
+   */
+  private function buildOptions(string $optionGroup, int $labelAsValue) : array {
+    $optionValues = \Civi\Api4\OptionValue::get(FALSE)
+      ->addSelect('label', 'value')
+      ->addWhere('is_active', '=', TRUE)
+      ->addWhere('option_group_id:name', '=', $optionGroup)
+      ->execute();
+    foreach ($optionValues as $optionValue) {
+      if ($labelAsValue) {
+        $optionList[] = ['label' => $optionValue['label'], 'value' => $optionValue['label']];
+      }
+      else {
+        $optionList[] = ['label' => $optionValue['label'], 'value' => $optionValue['value']];
+      }
+    }
+    return $optionList;
   }
 
   /**

@@ -157,6 +157,11 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ['content'],
@@ -181,17 +186,26 @@ __webpack_require__.r(__webpack_exports__);
 
       if (this.def.type.name === 'Text') {
         return 'textarea';
-      }
-      // Handle simple HTML5 validation types.
-      if (['Date','Time','file'].includes(this.def.type.name)) {
+      } // Handle simple HTML5 validation types.
+
+
+      if (['Date', 'Time', 'file'].includes(this.def.type.name)) {
         return this.def.type.name.toLowerCase();
+      } // Select lists.
+
+
+      if (['Select', 'OptionGroup'].includes(this.def.type.name)) {
+        return 'select';
       }
     },
     isInputType: function isInputType() {
-      return ['text','email','date','time','file'].includes(this.inputType);
+      return ['text', 'email', 'date', 'time', 'file'].includes(this.inputType);
     },
     isTextareaType: function isTextareaType() {
       return this.inputType === 'textarea';
+    },
+    isSelectType: function isSelectType() {
+      return this.inputType === 'select';
     },
     label: function label() {
       return this.def.title;
@@ -215,8 +229,6 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _FieldGroup_vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./FieldGroup.vue */ "./src/FieldGroup.vue");
 /* harmony import */ var _InlayProgress_vue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./InlayProgress.vue */ "./src/InlayProgress.vue");
-//
-//
 //
 //
 //
@@ -272,7 +284,6 @@ __webpack_require__.r(__webpack_exports__);
           d[fieldName] = _this.$root.values[fieldName];
         }
       });
-      console.log("would submit: ", d);
       var progress = this.$refs.progress;
       progress.startTimer(5, 20, 1);
       this.inlay.request({
@@ -1629,139 +1640,189 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _c("div", { class: _vm.content }, [
-    _c("label", [_vm._v(_vm._s(_vm.label))]),
-    _vm._v(" "),
-    _vm.inputType === "checkbox" && _vm.isInputType
-      ? _c("input", {
-          directives: [
-            {
-              name: "model",
-              rawName: "v-model",
-              value: _vm.$root.values[_vm.def.name],
-              expression: "$root.values[def.name]"
-            }
-          ],
-          ref: _vm.def.name,
-          attrs: {
-            name: _vm.def.name,
-            required: _vm.def.is_required == 1,
-            disabled: _vm.submissionRunning,
-            type: "checkbox"
-          },
-          domProps: {
-            checked: Array.isArray(_vm.$root.values[_vm.def.name])
-              ? _vm._i(_vm.$root.values[_vm.def.name], null) > -1
-              : _vm.$root.values[_vm.def.name]
-          },
-          on: {
-            change: function($event) {
-              var $$a = _vm.$root.values[_vm.def.name],
-                $$el = $event.target,
-                $$c = $$el.checked ? true : false
-              if (Array.isArray($$a)) {
-                var $$v = null,
-                  $$i = _vm._i($$a, $$v)
-                if ($$el.checked) {
-                  $$i < 0 &&
-                    _vm.$set(_vm.$root.values, _vm.def.name, $$a.concat([$$v]))
+  return _c(
+    "div",
+    { class: _vm.content },
+    [
+      _c("label", [_vm._v(_vm._s(_vm.label))]),
+      _vm._v(" "),
+      _vm.inputType === "checkbox" && _vm.isInputType
+        ? _c("input", {
+            directives: [
+              {
+                name: "model",
+                rawName: "v-model",
+                value: _vm.$root.values[_vm.def.name],
+                expression: "$root.values[def.name]"
+              }
+            ],
+            ref: _vm.def.name,
+            attrs: {
+              name: _vm.def.name,
+              required: _vm.def.is_required == 1,
+              disabled: _vm.submissionRunning,
+              type: "checkbox"
+            },
+            domProps: {
+              checked: Array.isArray(_vm.$root.values[_vm.def.name])
+                ? _vm._i(_vm.$root.values[_vm.def.name], null) > -1
+                : _vm.$root.values[_vm.def.name]
+            },
+            on: {
+              change: function($event) {
+                var $$a = _vm.$root.values[_vm.def.name],
+                  $$el = $event.target,
+                  $$c = $$el.checked ? true : false
+                if (Array.isArray($$a)) {
+                  var $$v = null,
+                    $$i = _vm._i($$a, $$v)
+                  if ($$el.checked) {
+                    $$i < 0 &&
+                      _vm.$set(
+                        _vm.$root.values,
+                        _vm.def.name,
+                        $$a.concat([$$v])
+                      )
+                  } else {
+                    $$i > -1 &&
+                      _vm.$set(
+                        _vm.$root.values,
+                        _vm.def.name,
+                        $$a.slice(0, $$i).concat($$a.slice($$i + 1))
+                      )
+                  }
                 } else {
-                  $$i > -1 &&
+                  _vm.$set(_vm.$root.values, _vm.def.name, $$c)
+                }
+              }
+            }
+          })
+        : _vm.inputType === "radio" && _vm.isInputType
+        ? _c("input", {
+            directives: [
+              {
+                name: "model",
+                rawName: "v-model",
+                value: _vm.$root.values[_vm.def.name],
+                expression: "$root.values[def.name]"
+              }
+            ],
+            ref: _vm.def.name,
+            attrs: {
+              name: _vm.def.name,
+              required: _vm.def.is_required == 1,
+              disabled: _vm.submissionRunning,
+              type: "radio"
+            },
+            domProps: { checked: _vm._q(_vm.$root.values[_vm.def.name], null) },
+            on: {
+              change: function($event) {
+                return _vm.$set(_vm.$root.values, _vm.def.name, null)
+              }
+            }
+          })
+        : _vm.isInputType
+        ? _c("input", {
+            directives: [
+              {
+                name: "model",
+                rawName: "v-model",
+                value: _vm.$root.values[_vm.def.name],
+                expression: "$root.values[def.name]"
+              }
+            ],
+            ref: _vm.def.name,
+            attrs: {
+              name: _vm.def.name,
+              required: _vm.def.is_required == 1,
+              disabled: _vm.submissionRunning,
+              type: _vm.inputType
+            },
+            domProps: { value: _vm.$root.values[_vm.def.name] },
+            on: {
+              input: function($event) {
+                if ($event.target.composing) {
+                  return
+                }
+                _vm.$set(_vm.$root.values, _vm.def.name, $event.target.value)
+              }
+            }
+          })
+        : _vm._e(),
+      _vm._v(" "),
+      _vm.isTextareaType
+        ? _c("textarea", {
+            directives: [
+              {
+                name: "model",
+                rawName: "v-model",
+                value: _vm.$root.values[_vm.def.name],
+                expression: "$root.values[def.name]"
+              }
+            ],
+            ref: _vm.def.name,
+            attrs: {
+              rows: "4",
+              cols: "40",
+              required: _vm.def.is_required == 1,
+              name: _vm.def.name,
+              disabled: _vm.submissionRunning
+            },
+            domProps: { value: _vm.$root.values[_vm.def.name] },
+            on: {
+              input: function($event) {
+                if ($event.target.composing) {
+                  return
+                }
+                _vm.$set(_vm.$root.values, _vm.def.name, $event.target.value)
+              }
+            }
+          })
+        : _vm._e(),
+      _vm._v(" "),
+      _vm.isSelectType
+        ? [
+            _c(
+              "select",
+              {
+                directives: [
+                  {
+                    name: "model",
+                    rawName: "v-model",
+                    value: _vm.$root.values[_vm.def.name],
+                    expression: "$root.values[def.name]"
+                  }
+                ],
+                on: {
+                  change: function($event) {
+                    var $$selectedVal = Array.prototype.filter
+                      .call($event.target.options, function(o) {
+                        return o.selected
+                      })
+                      .map(function(o) {
+                        var val = "_value" in o ? o._value : o.value
+                        return val
+                      })
                     _vm.$set(
                       _vm.$root.values,
                       _vm.def.name,
-                      $$a.slice(0, $$i).concat($$a.slice($$i + 1))
+                      $event.target.multiple ? $$selectedVal : $$selectedVal[0]
                     )
+                  }
                 }
-              } else {
-                _vm.$set(_vm.$root.values, _vm.def.name, $$c)
-              }
-            }
-          }
-        })
-      : _vm.inputType === "radio" && _vm.isInputType
-      ? _c("input", {
-          directives: [
-            {
-              name: "model",
-              rawName: "v-model",
-              value: _vm.$root.values[_vm.def.name],
-              expression: "$root.values[def.name]"
-            }
-          ],
-          ref: _vm.def.name,
-          attrs: {
-            name: _vm.def.name,
-            required: _vm.def.is_required == 1,
-            disabled: _vm.submissionRunning,
-            type: "radio"
-          },
-          domProps: { checked: _vm._q(_vm.$root.values[_vm.def.name], null) },
-          on: {
-            change: function($event) {
-              return _vm.$set(_vm.$root.values, _vm.def.name, null)
-            }
-          }
-        })
-      : _vm.isInputType
-      ? _c("input", {
-          directives: [
-            {
-              name: "model",
-              rawName: "v-model",
-              value: _vm.$root.values[_vm.def.name],
-              expression: "$root.values[def.name]"
-            }
-          ],
-          ref: _vm.def.name,
-          attrs: {
-            name: _vm.def.name,
-            required: _vm.def.is_required == 1,
-            disabled: _vm.submissionRunning,
-            type: _vm.inputType
-          },
-          domProps: { value: _vm.$root.values[_vm.def.name] },
-          on: {
-            input: function($event) {
-              if ($event.target.composing) {
-                return
-              }
-              _vm.$set(_vm.$root.values, _vm.def.name, $event.target.value)
-            }
-          }
-        })
-      : _vm._e(),
-    _vm._v(" "),
-    _vm.isTextareaType
-      ? _c("textarea", {
-          directives: [
-            {
-              name: "model",
-              rawName: "v-model",
-              value: _vm.$root.values[_vm.def.name],
-              expression: "$root.values[def.name]"
-            }
-          ],
-          ref: _vm.def.name,
-          attrs: {
-            rows: "4",
-            cols: "40",
-            required: _vm.def.is_required == 1,
-            name: _vm.def.name,
-            disabled: _vm.submissionRunning
-          },
-          domProps: { value: _vm.$root.values[_vm.def.name] },
-          on: {
-            input: function($event) {
-              if ($event.target.composing) {
-                return
-              }
-              _vm.$set(_vm.$root.values, _vm.def.name, $event.target.value)
-            }
-          }
-        })
-      : _vm._e()
-  ])
+              },
+              _vm._l(_vm.def.option_values, function(option) {
+                return _c("option", { domProps: { value: option.value } }, [
+                  _vm._v(_vm._s(option.label))
+                ])
+              }),
+              0
+            )
+          ]
+        : _vm._e()
+    ],
+    2
+  )
 }
 var staticRenderFns = []
 render._withStripped = true
@@ -1833,7 +1894,11 @@ var render = function() {
         )
       : _vm._e(),
     _vm._v(" "),
-    _vm.stage === "thanks" ? _c("div", [_vm._v("\n    Thanks.\n  ")]) : _vm._e()
+    _vm.stage === "thanks"
+      ? _c("div", {
+          domProps: { innerHTML: _vm._s(_vm.inlay.initData.webThanksHTML) }
+        })
+      : _vm._e()
   ])
 }
 var staticRenderFns = []
@@ -14369,7 +14434,7 @@ __webpack_require__.r(__webpack_exports__);
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! /home/rich/civicrm-buildkit-docker/build/dmaster/sites/default/files/civicrm/ext/inlayfp/src/inlayfp.js */"./src/inlayfp.js");
+module.exports = __webpack_require__(/*! /home/jon/local/neftp/web/wp-content/civicrm-custom/extensions/inlayfp/src/inlayfp.js */"./src/inlayfp.js");
 
 
 /***/ })
