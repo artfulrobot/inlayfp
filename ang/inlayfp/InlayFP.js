@@ -145,9 +145,9 @@
         case 'select':
           text = "(Format as select list)";
           break;
-        case 'radio':
+        case 'radios':
         case 'checkboxes':
-          text = "(Format as radio button/checkboxes)";
+          text = "(Format as radio buttons/checkboxes)";
           break;
         default:
           text = '';
