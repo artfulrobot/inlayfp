@@ -5,6 +5,7 @@ namespace Civi\Inlay;
 use Civi\Inlay\Type as InlayType;
 use Civi\Inlay\ApiRequest;
 use Civi;
+use Civi\Api4\Inlay;
 use CRM_Inlayfp_ExtensionUtil as E;
 
 class FormProcessor extends InlayType {
@@ -64,7 +65,7 @@ class FormProcessor extends InlayType {
       $inputs[$_['name']] = $_;
     }
 
-    $init['layout'] = [];
+    $init['layout'] = $init['fieldDefs'] = [];
     // First there's on item on the stack which is the top level thing.
     $stack = [&$init['layout']];
     $ptr = 0;
@@ -74,7 +75,7 @@ class FormProcessor extends InlayType {
         continue;
       }
       $m = [];
-      if (!preg_match('/^(\s*)(\.?)([a-zA-Z_-][a-zA-Z0-9_-]*)$/', $line, $m)) {
+      if (!preg_match('/^(\s*)(\.?)([a-zA-Z_-][a-zA-Z0-9_-]*)(?:~([a-zA-Z0-9_-]+))*$/', $line, $m)) {
         // Broken! @todo flag this somehow. Possibly abort the rebuild.
         continue;
       }
@@ -82,7 +83,7 @@ class FormProcessor extends InlayType {
       $lineDepth = strlen($m[1]);
       $isGroup = $m[2] === '.';
       $name = $m[3];
-
+      $modifier = $m[4] ?? NULL;
       while ($lineDepth < $depth) {
         array_pop($stack);
         $ptr--;
@@ -94,7 +95,7 @@ class FormProcessor extends InlayType {
         $item = ['tag' => 'FieldGroup', 'class' => $name, 'content' => []];
         // Add this item to the current collection.
         $stack[$ptr][] = &$item;
-        // Add an item to the stck itself, do our new collection is the item's fields.
+        // Add an item to the stack itself, so our new collection is the item's fields.
         $stack[] = &$item['content'];
         $ptr++;
         $depth++;
@@ -106,17 +107,68 @@ class FormProcessor extends InlayType {
         }
         $item = ['tag' => 'IfpField', 'class' => $name, 'content' => $name];
         $stack[$ptr][] = $item;
+        // Export the field definitions, keyed by name.
+        $init['fieldDefs'][$name] = $this->buildFieldDef($inputs[$name], $modifier);
       }
       unset($item);
     }
 
-    // Export the field definitions, keyed by name.
-    $init['fieldDefs'] = [];
-    foreach ($fp['inputs'] as $_) {
-      $init['fieldDefs'][$_['name']] = $_;
-    }
-
     return $init;
+  }
+
+  /**
+   * Strip out unneeded data from the field definition; add in options for multiple-choice inputs.
+   * Also apply any field modifiers.
+   */
+  private function buildFieldDef(array $inputDef, ?string $modifier) : array {
+    $fieldDef = [];
+    // Let's only take data we're interested in, to minimize JS size and reduce info leakage.
+    unset($inputDef['type']['configuration_spec']);
+    $usedElements = ['name', 'is_required', 'type', 'validators', 'title'];
+    foreach ($usedElements as $element) {
+      $fieldDef[$element] = $inputDef[$element];
+    }
+    // Apply modifiers.
+    switch ($modifier) {
+      case 'radio':
+      case 'checkboxes':
+        if ($fieldDef['type']['default_configuration']['multiple'] ?? FALSE) {
+          $fieldDef['type']['name'] = 'Checkbox';
+        }
+        else {
+          $fieldDef['type']['name'] = 'Radio';
+        }
+        break;
+
+      case 'select':
+        $fieldDef['type']['name'] = 'Select';
+        break;
+    }
+    // Add option values if applicable
+    if ($fieldDef['type']['default_configuration']['option_group_name']) {
+      $fieldDef['option_values'] = $this->buildOptions($fieldDef['type']['default_configuration']['option_group_name'], (int) $fieldDef['type']['default_configuration']['option_group_name']['use_label_as_value']);
+    }
+    return $fieldDef;
+  }
+
+  /**
+   * Return a list of option values.
+   */
+  private function buildOptions(string $optionGroup, int $labelAsValue) : array {
+    $optionValues = \Civi\Api4\OptionValue::get(FALSE)
+      ->addSelect('label', 'value')
+      ->addWhere('is_active', '=', TRUE)
+      ->addWhere('option_group_id:name', '=', $optionGroup)
+      ->execute();
+    foreach ($optionValues as $optionValue) {
+      if ($labelAsValue) {
+        $optionList[] = ['label' => $optionValue['label'], 'value' => $optionValue['label']];
+      }
+      else {
+        $optionList[] = ['label' => $optionValue['label'], 'value' => $optionValue['value']];
+      }
+    }
+    return $optionList;
   }
 
   /**

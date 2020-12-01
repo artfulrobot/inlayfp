@@ -27,9 +27,8 @@
         ng-model="inlay.config.formProcessor"
         name="formProcessor"
         style="width: 100%"
+        ng-options="g.title for g in formProcessors track by g.name"
         >
-        <option ng-repeat="g in formProcessors"
-                ng-value="g.name">{{g.title}}</option>
       </select>
     </div>
 

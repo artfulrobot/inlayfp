@@ -20,6 +20,11 @@
       :disabled="submissionRunning"
       :ref="def.name"
       />
+    <template v-if="isSelectType">
+    <select v-model="$root.values[def.name]">
+        <option v-for="option in def.option_values" v-bind:value="option.value">{{option.label}}</option>
+    </select>
+    </template>
   </div>
 </template>
 <script>
@@ -46,12 +51,23 @@ export default {
       if (this.def.type.name === 'Text') {
         return 'textarea';
       }
+      // Handle simple HTML5 validation types.
+      if (['Date','Time','file'].includes(this.def.type.name)) {
+        return this.def.type.name.toLowerCase();
+      }
+      // Select lists.
+      if (['Select','OptionGroup'].includes(this.def.type.name)) {
+        return 'select';
+      }
     },
     isInputType() {
-      return (this.inputType === 'text' || this.inputType === 'email' );
+      return ['text','email','date','time','file'].includes(this.inputType);
     },
     isTextareaType() {
       return (this.inputType === 'textarea');
+    },
+    isSelectType() {
+      return (this.inputType === 'select');
     },
     label() {
       return this.def.title;
