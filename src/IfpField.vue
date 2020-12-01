@@ -117,15 +117,19 @@ export default {
 
       // Map the rest to lower case, except the following oddballs.
       return {
-        'String'      : 'text',
-        'Text'        : 'textarea',
-        'OptionGroup' : 'select',
-        'Integer'     : 'number',
+        'String'           : 'text',
+        'Text'             : 'textarea',
+        'OptionGroup'      : 'select',
+        'Integer'          : 'number',
+        'Float'            : 'number',
+        'FormattedDecimal' : 'text',
+        'Boolean'          : 'radio',
+        'file_url'         : 'url',
       }[typeName] || typeName.toLowerCase();
 
     },
     isInputType() {
-      return ['text','email','date','time','file','number'].includes(this.inputType);
+      return ['text','email','date','time','file','number', 'url'].includes(this.inputType);
     },
     label() {
       return this.def.title;
