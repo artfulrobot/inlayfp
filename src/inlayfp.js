@@ -19,10 +19,22 @@ import InlayFormProcessor from './InlayFormProcessor.vue';
             values[fieldName] = '';
             inlay.initData.fieldDefs[fieldName].include = false;
           });
-          var d = {inlay, values, submissionRunning: false};
+          var d = {
+            inlay,
+            values,
+            submissionRunning: false,
+            formID: 0
+          };
           return d;
         },
-        render: h => h(InlayFormProcessor, {props: {inlay}})
+        render: h => h(InlayFormProcessor, {props: {inlay}}),
+        methods: {
+          // Generate a unique ID.
+          getNextId() {
+            this.formID++;
+            return `i${this.inlay.publicID}-${this.formID}`;
+          }
+        }
       });
     };
   }

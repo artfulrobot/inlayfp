@@ -129,6 +129,20 @@ class FormProcessor extends InlayType {
   /**
    * Strip out unneeded data from the field definition; add in options for multiple-choice inputs.
    * Also apply any field modifiers.
+   *
+   * The field definition is the output of the FormProcessor.get API, but filtered and a bit mangled.
+   *
+   * e.g. {
+   *   name: string,
+   *   is_required: bool,
+   *   type: {
+   *      name: Checkbox|Radio|Select|...,
+   *   },
+   *   option_values: [ {label: string, value: string}, ... ],
+   *   validators: [
+   *   ],
+   *   title: string
+   * }
    */
   private function buildFieldDef(array $inputDef, ?string $modifier) : array {
     $fieldDef = [];
@@ -140,7 +154,7 @@ class FormProcessor extends InlayType {
     }
     // Apply modifiers.
     switch ($modifier) {
-      case 'radio':
+      case 'radios':
       case 'checkboxes':
         if ($fieldDef['type']['default_configuration']['multiple'] ?? FALSE) {
           $fieldDef['type']['name'] = 'Checkbox';

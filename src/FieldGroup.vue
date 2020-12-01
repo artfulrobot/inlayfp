@@ -18,6 +18,10 @@ export default {
   props: ['content', 'groupClass'],
   components: { IfpField},
   data() {
+    // content is an array of items that describe other components.
+    // This allows nested FieldGroup items as well as various types of form
+    // input, currently all handled by the IfpField component (as there's a lot of
+    // crossover between types).
     return {
       fields: this.content,
     }

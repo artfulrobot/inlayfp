@@ -11,7 +11,7 @@
       v-model="$root.values[def.name]"
       />
     <textarea
-      v-if="isTextareaType"
+      v-if="inputType === 'textarea'"
       rows=4
       cols=40
       v-model="$root.values[def.name]"
@@ -20,54 +20,111 @@
       :disabled="submissionRunning"
       :ref="def.name"
       />
-    <template v-if="isSelectType">
-    <select v-model="$root.values[def.name]">
-        <option v-for="option in def.option_values" v-bind:value="option.value">{{option.label}}</option>
+    <select
+      v-if="inputType === 'select'"
+      v-model="$root.values[def.name]">
+        <option v-for="option in def.option_values" :value="option.value">{{option.label}}</option>
     </select>
-    </template>
+
+    <div v-if="inputType === 'radio'" class="ifp-radios">
+      <div v-for="option in def.option_values" class="ifp-radio">
+        <label :for="myId + option.value"><input
+          type="radio"
+          :name="def.name"
+          :required="def.is_required == 1"
+          :disabled="submissionRunning"
+          :value="option.value"
+          v-model="$root.values[def.name]"
+          :id="myId + option.value" />
+        {{option.label}}</label>
+      </div>
+    </div>
+
+    <div v-if="inputType === 'checkbox'" class="ifp-checkboxes">
+      <div v-for="(option, i) in checkboxes" class="ifp-checkbox">
+        <label :for="myId + i"><input
+          type="checkbox"
+          :id="myId + i"
+          :name="def.name"
+          :required="def.is_required == 1"
+          :disabled="submissionRunning"
+          :value="option.value"
+          v-model="option.selected"
+          @change="updateValue()"
+           />
+        {{option.label}}</label>
+      </div>
+    </div>
   </div>
 </template>
+<style lang="scss">
+// Create nice hanging indent with no dead, unclickable whitespace.
+.ifp-radio>label {
+  position: relative;
+  $spaceForRadio: 1.6rem;
+  padding-left: $spaceForRadio;
+  &>input {
+    position: absolute;
+    margin-left: -$spaceForRadio;
+  }
+}
+</style>
 <script>
 
 import IfpField from './IfpField.vue';
 
 export default {
+  // 'content' (String) form processor input name.
   props: ['content'],
+  data() {
+    const d = {
+      myId: this.$root.getNextId(),
+      checkboxes: []
+    };
+
+    // If we're handling checkboxes then we have a composite situation going on.
+    if (this.$root.inlay.initData.fieldDefs[this.content].type.name === 'Checkbox') {
+      this.$root.inlay.initData.fieldDefs[this.content].option_values.forEach(v => {
+        d.checkboxes.push(Object.assign({'selected': false}, v));
+      });
+    }
+
+    return d;
+  },
+  methods: {
+    updateValue() {
+      // Copy just the values that are selected.
+      this.$root.values[this.def.name] = this.checkboxes
+        .filter(option => option.selected)
+        .map(option => option.value);
+    }
+  },
   computed: {
     def() {
+      // The field definition for the input we're handling.
       return this.$root.inlay.initData.fieldDefs[this.content];
     },
     submissionRunning() {
       return this.$root.submissionRunning;
     },
     inputType() {
-      if (this.def.type.name === 'String') {
-        // Could be text or email.
-        if (this.def.validators.find(v => v.validator.name === 'email')) {
-          return 'email';
-        }
-        return 'text';
+      var typeName = this.def.type.name;
+
+      // Email is a special case.
+      if (typeName === 'String' && this.def.validators.find(v => v.validator.name === 'email')) {
+        return 'email';
       }
-      if (this.def.type.name === 'Text') {
-        return 'textarea';
-      }
-      // Handle simple HTML5 validation types.
-      if (['Date','Time','file'].includes(this.def.type.name)) {
-        return this.def.type.name.toLowerCase();
-      }
-      // Select lists.
-      if (['Select','OptionGroup'].includes(this.def.type.name)) {
-        return 'select';
-      }
+
+      // Map the rest to lower case, except the following oddballs.
+      return {
+        'String'      : 'text',
+        'Text'        : 'textarea',
+        'OptionGroup' : 'select',
+      }[typeName] || typeName.toLowerCase();
+
     },
     isInputType() {
       return ['text','email','date','time','file'].includes(this.inputType);
-    },
-    isTextareaType() {
-      return (this.inputType === 'textarea');
-    },
-    isSelectType() {
-      return (this.inputType === 'select');
     },
     label() {
       return this.def.title;
