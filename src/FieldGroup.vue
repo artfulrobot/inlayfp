@@ -26,13 +26,15 @@ export default {
 
 </script>
 <style lang="scss">
+// Responsive 2 column layout
 .ifp-group {
   margin-left: -1rem;
   margin-right: -1rem;
   display: flex;
+  flex-wrap: wrap;
   &>* {
     padding:0 1rem;
-    flex: 1 1 auto;
+    flex: 1 0 14rem;
   }
 }
 </style>

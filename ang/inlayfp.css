@@ -10,10 +10,12 @@
   margin: 0.5rem 0;
   padding: 0.5rem;
 }
+.ifp-two-cols,
 .layout-demo div.group>.items {
   display: flex;
   margin: 0 -0.5rem;
 }
+.ifp-two-cols>div,
 .layout-demo .items>div {
   flex: 1 1 auto;
   margin: 0 0.5rem;

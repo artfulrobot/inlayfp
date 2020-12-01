@@ -21,6 +21,16 @@
         />
     </div>
 
+    <div crm-ui-field="{name: 'inlayForm.publicTitle', title: ts('Public Title')}">
+      <input
+        crm-ui-id="inlayForm.publicTitle"
+        name="publicTitle"
+        ng-model="inlay.config.publicTitle"
+        class="crm-form-text"
+        placeholder="{{ts('e.g. Get in touch')}}"
+        />
+    </div>
+
     <div crm-ui-field="{name: 'inlayForm.formProcessor', title: ts('Form Processor name')}">
       <select
         crm-ui-select="{allowClear:false, dropdownAutoWidth: true}"
@@ -28,27 +38,41 @@
         name="formProcessor"
         style="width: 100%"
         ng-options="g.title for g in formProcessors track by g.name"
+        ng-change="checkLayout()"
         >
       </select>
     </div>
 
     <div crm-ui-field="{name: 'inlayForm.layout', title: ts('Layout'), help: hs('layout')}" ng-if="fp">
-      <textarea
-        rows="6"
-        cols="30"
-        crm-ui-id="inlayForm.layout"
-        name="layout"
-        ng-model="inlay.config.layout"
-        class="crm-form-text"
-        placeholder="{{ts('Our lovely form processor form')}}"
-        ng-change="checkLayout()"
-        ></textarea>
 
-      <p>Fields:
-        <span ng-repeat="f in fp.inputs"
-          ng-style="{color: !!layoutParsed.fieldsUsed[f.name] ? '#080' : '#800'}"
-          >{{f.name}} <span ng-if="f.is_required == 1">(required)</span> &nbsp; </span>
-      </p>
+      <div class="ifp-two-cols">
+        <div>
+          <textarea
+            rows="{{ 2 + fp.inputs.length }}"
+            cols="30"
+            crm-ui-id="inlayForm.layout"
+            name="layout"
+            ng-model="inlay.config.layout"
+            class="crm-form-text"
+            ng-change="checkLayout()"
+            ></textarea>
+        </div>
+        <div>
+          <p>Fields available:</p>
+          <ul>
+            <li ng-repeat="f in fp.inputs" >
+              <a
+                href
+                ng-click="addToLayout(f)"
+                ng-style="{color: !!layoutParsed.fieldsUsed[f.name] ? '#080' : ((f.is_required == 1) ? '#800' : '#860')}"
+                >{{f.name}} <span ng-if="f.is_required == 1">(required)</span></a>
+            </li>
+          </ul>
+          <p>Add a field by typing its name on one line (or click the field above). Add a <em>group</em> by entering a line starting with a dot, like .group1</p>
+          <p>Add items into the latest group by indenting them with a single space.</p>
+          <p>Add <code>~radios</code> or <code>~checkboxes</code> or <code>~select</code> immediately after the field name render options in various ways</p>
+        </div>
+      </div>
 
       <div class="layout-demo" ng-bind-html="layoutParsed.html"></div>
       <ul ng-if="layoutParsed.errors.length" class="error">

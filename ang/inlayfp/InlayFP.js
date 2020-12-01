@@ -140,6 +140,18 @@
         html, errors, fieldsUsed
       };
     }
+
+    $scope.addToLayout = function(field) {
+      // Check it's not already in the layout.
+      const re = new RegExp('^\\s*' + field.name + '$', 'm');
+      if ($scope.inlay.config.layout.match(re)) {
+        alert(`Field '${field.name}' is already on the form.`);
+        return;
+      }
+      $scope.inlay.config.layout += "\n" + field.name;
+      $scope.checkLayout();
+    };
+
     function fieldModifier(modifier) {
       switch (modifier) {
         case 'select':

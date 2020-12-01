@@ -2,6 +2,7 @@
   <div style="overflow:hidden;">
 
     <form action='#' @submit.prevent="submitForm" v-if="stage === 'form'">
+      <h2 v-if="inlay.initData.publicTitle">{{inlay.initData.publicTitle}}</h2>
 
       <field-group
         :content="inlay.initData.layout"

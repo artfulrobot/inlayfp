@@ -14,6 +14,7 @@ class FormProcessor extends InlayType {
 
   public static $defaultConfig = [
     'formProcessor'    => NULL,
+    'publicTitle'      => '',
     'layout'           => '',
     'submitButtonText' => 'Submit',
     'webThanksHTML'    => '<p>Thank you</p>',
@@ -89,6 +90,15 @@ class FormProcessor extends InlayType {
         $ptr--;
         $depth--;
       }
+
+
+      // Nb. $item['tag'] is the Vue tag/component name.
+      // $item['class'] is supposed to be just a CSS class; not valuable for fields (as
+      //  there's other data to construct classes from), but I just liked the
+      //  idea that you could specify a class for a group, as this makes CSS
+      //  theming easier on the front end.
+      // $item['content'] is either an array of items, or is the Form Processor input
+      // $item['name'] This means that you can look up the metadata for a field from this key.
 
       if ($isGroup) {
         // new group.
