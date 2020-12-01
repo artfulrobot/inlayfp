@@ -54,7 +54,7 @@ class FormProcessor extends InlayType {
       'submitButtonText' => $this->config['submitButtonText'],
     ];
 
-    $fp = civicrm_api3('FormProcessorInstance', 'get', ['sequential' => 1, 'name' => $this->config['formProcessor']])['values'][0] ?? NULL;
+    $fp = array_pop(\CRM_FormProcessor_BAO_FormProcessorInstance::getValues(['name' => $this->config['formProcessor']]));
     if (!$fp) {
       // aaaagh!
       throw new \RuntimeException("Cannot load form processor '{$this->config['formProcessor']}'");
@@ -90,7 +90,6 @@ class FormProcessor extends InlayType {
         $ptr--;
         $depth--;
       }
-
 
       // Nb. $item['tag'] is the Vue tag/component name.
       // $item['class'] is supposed to be just a CSS class; not valuable for fields (as
@@ -147,16 +146,20 @@ class FormProcessor extends InlayType {
   private function buildFieldDef(array $inputDef, ?string $modifier) : array {
     $fieldDef = [];
     // Let's only take data we're interested in, to minimize JS size and reduce info leakage.
-    unset($inputDef['type']['configuration_spec']);
-    $usedElements = ['name', 'is_required', 'type', 'validators', 'title'];
+    $usedElements = ['name', 'is_required', 'configuration', 'validators', 'title'];
     foreach ($usedElements as $element) {
       $fieldDef[$element] = $inputDef[$element];
+    }
+    $fieldDef['type']['name'] = $inputDef['type']->getName();
+    // All option list fields should default to a type of "Select".
+    if (is_subclass_of($inputDef['type'], '\Civi\FormProcessor\Type\OptionListInterface')) {
+      $fieldDef['type']['name'] = 'Select';
     }
     // Apply modifiers.
     switch ($modifier) {
       case 'radios':
       case 'checkboxes':
-        if ($fieldDef['type']['default_configuration']['multiple'] ?? FALSE) {
+        if ($fieldDef['configuration']['multiple'] ?? FALSE) {
           $fieldDef['type']['name'] = 'Checkbox';
         }
         else {
@@ -169,30 +172,17 @@ class FormProcessor extends InlayType {
         break;
     }
     // Add option values if applicable
-    if ($fieldDef['type']['default_configuration']['option_group_name']) {
-      $fieldDef['option_values'] = $this->buildOptions($fieldDef['type']['default_configuration']['option_group_name'], (int) $fieldDef['type']['default_configuration']['option_group_name']['use_label_as_value']);
+    if (method_exists($inputDef['type'], 'getOptions')) {
+      // Put a blank option at the top so select lists/radios can be deselected.
+      if ($fieldDef['type']['name'] !== 'Checkbox' && !$fieldDef['is_required']) {
+        $fieldDef['option_values'][] = [['label' => '- none -', 'value' => '']];
+      }
+      $optionValues = $inputDef['type']->getOptions([]);
+      foreach ($optionValues as $key => $optionValue) {
+        $fieldDef['option_values'][] = ['label' => $optionValue, 'value' => $key];
+      }
     }
     return $fieldDef;
-  }
-
-  /**
-   * Return a list of option values.
-   */
-  private function buildOptions(string $optionGroup, int $labelAsValue) : array {
-    $optionValues = \Civi\Api4\OptionValue::get(FALSE)
-      ->addSelect('label', 'value')
-      ->addWhere('is_active', '=', TRUE)
-      ->addWhere('option_group_id:name', '=', $optionGroup)
-      ->execute();
-    foreach ($optionValues as $optionValue) {
-      if ($labelAsValue) {
-        $optionList[] = ['label' => $optionValue['label'], 'value' => $optionValue['label']];
-      }
-      else {
-        $optionList[] = ['label' => $optionValue['label'], 'value' => $optionValue['value']];
-      }
-    }
-    return $optionList;
   }
 
   /**
