@@ -1,6 +1,6 @@
 <template>
   <div :class="content">
-    <label >{{label}}</label>
+    <label >{{label}}<span v-if="def.is_required == 1" class="required-marker" title="This field is required"> *</span></label>
     <input
       v-if="isInputType"
       :name="def.name"
@@ -117,14 +117,19 @@ export default {
 
       // Map the rest to lower case, except the following oddballs.
       return {
-        'String'      : 'text',
-        'Text'        : 'textarea',
-        'OptionGroup' : 'select',
+        'String'           : 'text',
+        'Text'             : 'textarea',
+        'OptionGroup'      : 'select',
+        'Integer'          : 'number',
+        'Float'            : 'number',
+        'FormattedDecimal' : 'text',
+        'Boolean'          : 'radio',
+        'file_url'         : 'url',
       }[typeName] || typeName.toLowerCase();
 
     },
     isInputType() {
-      return ['text','email','date','time','file'].includes(this.inputType);
+      return ['text','email','date','time','file','number', 'url'].includes(this.inputType);
     },
     label() {
       return this.def.title;
@@ -136,4 +141,3 @@ export default {
 }
 
 </script>
-
