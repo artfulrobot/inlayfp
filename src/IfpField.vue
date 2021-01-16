@@ -1,6 +1,6 @@
 <template>
   <div :class="content">
-    <label >{{label}}<template v-if="def.is_required == 1"><span class="required-marker" title="This field is required"> *</span></template></label>
+    <label >{{label}}<span v-if="def.is_required == 1" class="required-marker" title="This field is required"> *</span></label>
     <input
       v-if="isInputType"
       :name="def.name"
@@ -141,4 +141,3 @@ export default {
 }
 
 </script>
-
