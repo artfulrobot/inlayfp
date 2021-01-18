@@ -1,3 +1,7 @@
+**This repoisitory has moved to <https://lab.civicrm.org/extensions/inlayfp>**
+
+--------------------
+
 # An [Inlay](https://lab.civicrm.org/extensions/inlay) for Form Processor
 
 This is at proof of concept stage.
